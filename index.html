@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Трекер проекта</title>
+
+<!-- PWA + иконка -->
+<link rel="manifest" href="data:application/json,{
+  %22name%22:%22%D0%A2%D1%80%D0%B5%D0%BA%D0%B5%D1%80%20%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D0%B0%22,
+  %22short_name%22:%22%D0%A2%D1%80%D0%B5%D0%BA%D0%B5%D1%80%22,
+  %22start_url%22:%22.%22,
+  %22display%22:%22standalone%22,
+  %22background_color%22:%22%230d0f14%22,
+  %22theme_color%22:%22%230d0f14%22,
+  %22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%230d0f14'/%3E%3Ctext x='256' y='320' font-family='Georgia,serif' font-size='280' fill='%23C4A35A' text-anchor='middle'%3E✦%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22512x512%22,%22type%22:%22image/svg+xml%22}]
+}">
+<meta name="theme-color" content="#0d0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Трекер">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230d0f14'/><text x='256' y='320' font-family='Georgia,serif' font-size='280' fill='%23C4A35A' text-anchor='middle'>✦</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230d0f14'/><text x='256' y='320' font-family='Georgia,serif' font-size='280' fill='%23C4A35A' text-anchor='middle'>✦</text></svg>">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background: #0d0f14;
+    color: #d4cfc8;
+    font-family: Georgia, serif;
+    padding-bottom: 60px;
+  }
+  button { cursor: pointer; font-family: inherit; }
+  input, textarea, select { font-family: inherit; }
+
+  #header {
+    border-bottom: 1px solid #1e2530;
+    padding: 28px 32px 20px;
+    background: #0d0f14;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  #header-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  #subtitle {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #5A6878;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  #title-line {
+    font-size: 22px;
+    font-weight: normal;
+    color: #e8e0d5;
+    letter-spacing: 0.5px;
+  }
+  #btn-add {
+    background: #C4A35A;
+    color: #0d0f14;
+    border: none;
+    padding: 9px 20px;
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+  #btn-add:hover { background: #d4b36a; }
+
+  #header-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn-export {
+    background: transparent;
+    border: 1px solid #1e2530;
+    color: #5A6878;
+    padding: 8px 13px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+  }
+  .btn-export:hover { border-color: #5A6878; color: #d4cfc8; }
+  .btn-import-lbl {
+    background: transparent;
+    border: 1px solid #1e2530;
+    color: #5A6878;
+    padding: 8px 13px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-import-lbl:hover { border-color: #5A6878; color: #d4cfc8; }
+
+  .filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
+  .filter-label { font-size: 11px; color: #3a4555; letter-spacing: 1px; text-transform: uppercase; margin-right: 4px; }
+
+  #search-row { display: flex; gap: 10px; margin-top: 10px; }
+  #search-input {
+    background: #12151c;
+    border: 1px solid #1e2530;
+    color: #d4cfc8;
+    padding: 6px 12px;
+    font-size: 13px;
+    flex: 1;
+    outline: none;
+  }
+  #sort-select {
+    background: #12151c;
+    border: 1px solid #1e2530;
+    color: #7a8898;
+    padding: 6px 10px;
+    font-size: 12px;
+    outline: none;
+  }
+
+  #list { padding: 16px 32px; }
+  #empty-msg {
+    color: #3a4555;
+    text-align: center;
+    padding: 60px 0;
+    font-size: 14px;
+  }
+
+  .episode-card {
+    border-left: 3px solid #4a5568;
+    background: #10131a;
+    margin-bottom: 6px;
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .episode-card:hover { background: #14171f; }
+  .ep-pakt { text-align: center; }
+  .ep-pakt-label { font-size: 10px; color: #3a4555; letter-spacing: 1px; text-transform: uppercase; }
+  .ep-pakt-num { font-size: 18px; color: #8898aa; }
+  .ep-pakt-sub { font-size: 12px; color: #4a5568; }
+  .ep-pakt-vol { font-size: 10px; color: #C4A35A; letter-spacing: 0.5px; margin-top: 2px; }
+  .ep-title { font-size: 14px; color: #d4cfc8; margin-bottom: 4px; }
+  .ep-no-title { color: #3a4555; font-style: italic; }
+  .ep-meta { display: flex; align-items: center; gap: 10px; }
+  .ep-status-badge { font-size: 11px; letter-spacing: 0.5px; padding: 2px 7px; }
+  .ep-note-preview { font-size: 11px; color: #3a4555; font-style: italic; }
+  .ep-progress { text-align: right; min-width: 60px; }
+  .ep-progress-num { font-size: 16px; }
+  .ep-progress-bar-bg { width: 56px; height: 3px; background: #1a1f2a; margin-top: 4px; margin-left: auto; }
+  .ep-progress-bar { height: 100%; transition: width 0.3s; }
+
+  /* Modal */
+  #modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+  #modal-overlay.active { display: flex; }
+  #modal {
+    background: #12151c;
+    border: 1px solid #1e2530;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  #modal-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #5A6878;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .field-label {
+    font-size: 11px;
+    color: #5A6878;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .field-wrap { margin-bottom: 14px; }
+  .text-input {
+    width: 100%;
+    background: #0d0f14;
+    border: 1px solid #1e2530;
+    color: #d4cfc8;
+    padding: 8px 12px;
+    font-size: 13px;
+    outline: none;
+  }
+  .text-input:focus { border-color: #3a4555; }
+  #progress-val { font-size: 11px; color: #5A6878; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+  #form-progress { width: 100%; accent-color: #C4A35A; }
+
+  .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .vol-btn, .status-btn {
+    background: transparent;
+    border: 1px solid #1e2530;
+    color: #4a5568;
+    padding: 5px 13px;
+    font-size: 12px;
+    transition: all 0.1s;
+  }
+
+  #modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+  #btn-delete {
+    background: transparent;
+    border: 1px solid #3a1515;
+    color: #7a3333;
+    padding: 9px 16px;
+    font-size: 12px;
+  }
+  #btn-delete:hover { background: #1a0a0a; }
+  #modal-right-btns { display: flex; gap: 8px; margin-left: auto; }
+  #btn-cancel {
+    background: transparent;
+    border: 1px solid #1e2530;
+    color: #5A6878;
+    padding: 9px 18px;
+    font-size: 12px;
+  }
+  #btn-save {
+    background: #C4A35A;
+    border: none;
+    color: #0d0f14;
+    padding: 9px 20px;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  #btn-save:hover { background: #d4b36a; }
+
+  @media (max-width: 500px) {
+    #header { padding: 20px 16px 16px; }
+    #list { padding: 12px 16px; }
+    .episode-card { grid-template-columns: 60px 1fr auto; }
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-top">
+    <div>
+      <div id="subtitle">Трекер проекта</div>
+      <div id="title-line">Эпизоды · 0 / 0% готов.</div>
+    </div>
+    <button id="btn-add" onclick="openAdd()">+ Добавить</button>
+  </div>
+  <div id="header-btns">
+    <button class="btn-export" onclick="exportJSON()">↓ JSON (резерв)</button>
+    <button class="btn-export" onclick="exportCSV()">↓ CSV / Excel</button>
+    <button class="btn-export" onclick="exportMD()">↓ Markdown</button>
+    <label class="btn-import-lbl">↑ Импорт JSON<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label>
+  </div>
+
+  <div id="status-filters" class="filter-row"></div>
+  <div id="volume-filters" class="filter-row"></div>
+
+  <div id="search-row">
+    <input id="search-input" placeholder="Поиск..." oninput="render()" />
+    <select id="sort-select" onchange="render()">
+      <option value="chapter">По пакту</option>
+      <option value="progress">По готовности</option>
+      <option value="status">По статусу</option>
+    </select>
+  </div>
+</div>
+
+<div id="list"></div>
+
+<!-- Modal -->
+<div id="modal-overlay" onclick="overlayClick(event)">
+  <div id="modal">
+    <div id="modal-title">Новый эпизод</div>
+
+    <div class="field-wrap">
+      <div class="field-label">Том</div>
+      <div id="vol-btns" class="btn-row"></div>
+    </div>
+
+    <div class="field-wrap">
+      <div class="field-label">Пакт</div>
+      <input id="f-chapter" class="text-input" placeholder="3" />
+    </div>
+    <div class="field-wrap">
+      <div class="field-label">Манифест / Лирика</div>
+      <input id="f-subchapter" class="text-input" placeholder="Манифест, Лирика, название..." />
+    </div>
+    <div class="field-wrap">
+      <div class="field-label">Название / описание</div>
+      <input id="f-title" class="text-input" placeholder="Встреча героев в таверне" />
+    </div>
+
+    <div class="field-wrap">
+      <div class="field-label">Статус</div>
+      <div id="status-btns" class="btn-row"></div>
+    </div>
+
+    <div class="field-wrap">
+      <div id="progress-val">Готовность: 0%</div>
+      <input id="form-progress" type="range" min="0" max="100" step="5" value="0" oninput="document.getElementById('progress-val').textContent='Готовность: '+this.value+'%'" />
+    </div>
+
+    <div class="field-wrap">
+      <div class="field-label">Заметка</div>
+      <textarea id="f-note" class="text-input" rows="2" placeholder="Краткая пометка..." style="resize:vertical"></textarea>
+    </div>
+
+    <div id="modal-actions">
+      <button id="btn-delete" onclick="deleteEpisode()" style="display:none">Удалить</button>
+      <div id="modal-right-btns">
+        <button id="btn-cancel" onclick="closeModal()">Отмена</button>
+        <button id="btn-save" onclick="saveEpisode()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STATUSES = [
+  { id: "idea",    label: "Идея",        color: "#5AB4C4", bg: "#0f2228" },
+  { id: "draft",   label: "Черновик",    color: "#9AAAB8", bg: "#1a1e22" },
+  { id: "editing", label: "Редактура",   color: "#C4B85A", bg: "#2a2510" },
+  { id: "rewrite", label: "Переписать",  color: "#C46A5A", bg: "#2a110f" },
+  { id: "move",    label: "Переставить", color: "#9B5AC4", bg: "#1e0f2a" },
+  { id: "done",    label: "Готово",      color: "#5AC47A", bg: "#0f2a16" },
+  { id: "missing", label: "Отсутствует", color: "#C45A5A", bg: "#2a0f0f" },
+  { id: "expand",  label: "Дополнить",   color: "#5AC4B8", bg: "#0f2a28" },
+];
+const VOLUMES = [1,2,3,4,5,6,7];
+const VOL_COLORS = {
+  1: { color: "#5A8BC4", bg: "#0f1a2a" },  // синий
+  2: { color: "#5AC47A", bg: "#0f2a16" },  // зелёный
+  3: { color: "#C4B85A", bg: "#2a2510" },  // жёлтый
+  4: { color: "#C4605A", bg: "#2a1110" },  // красный
+  5: { color: "#9B7AC4", bg: "#1a1030" },  // фиолетовый
+  6: { color: "#8A9BAA", bg: "#1a1e22" },  // серый/светлый
+  7: { color: "#5AC4C4", bg: "#0f2828" },  // бирюзовый
+};
+const STORAGE_KEY = "literary-tracker-episodes";
+
+let episodes = [];
+let filterStatus = "all";
+let filterVolume = "all";
+let editingId = null;
+let formVolume = 1;
+let formStatus = "idea";
+
+// Load
+try {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) episodes = JSON.parse(raw);
+} catch(e) {}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(episodes)); } catch(e) {}
+}
+
+function getStatus(id) {
+  return STATUSES.find(s => s.id === id) || STATUSES[0];
+}
+
+function openAdd() {
+  editingId = null;
+  formVolume = 1;
+  formStatus = "idea";
+  document.getElementById("modal-title").textContent = "Новый эпизод";
+  document.getElementById("f-chapter").value = "";
+  document.getElementById("f-subchapter").value = "";
+  document.getElementById("f-title").value = "";
+  document.getElementById("f-note").value = "";
+  document.getElementById("form-progress").value = 0;
+  document.getElementById("progress-val").textContent = "Готовность: 0%";
+  document.getElementById("btn-delete").style.display = "none";
+  renderVolBtns();
+  renderStatusBtns();
+  document.getElementById("modal-overlay").classList.add("active");
+}
+
+function openEdit(id) {
+  const ep = episodes.find(e => e.id === id);
+  if (!ep) return;
+  editingId = id;
+  formVolume = ep.volume || 1;
+  formStatus = ep.status || "idea";
+  document.getElementById("modal-title").textContent = "Редактировать эпизод";
+  document.getElementById("f-chapter").value = ep.chapter || "";
+  document.getElementById("f-subchapter").value = ep.subchapter || "";
+  document.getElementById("f-title").value = ep.title || "";
+  document.getElementById("f-note").value = ep.note || "";
+  document.getElementById("form-progress").value = ep.progress || 0;
+  document.getElementById("progress-val").textContent = "Готовность: " + (ep.progress || 0) + "%";
+  document.getElementById("btn-delete").style.display = "block";
+  renderVolBtns();
+  renderStatusBtns();
+  document.getElementById("modal-overlay").classList.add("active");
+}
+
+function closeModal() {
+  document.getElementById("modal-overlay").classList.remove("active");
+  editingId = null;
+}
+
+function overlayClick(e) {
+  if (e.target === document.getElementById("modal-overlay")) closeModal();
+}
+
+function setVolume(v) {
+  formVolume = v;
+  renderVolBtns();
+}
+
+function setStatus(s) {
+  formStatus = s;
+  renderStatusBtns();
+}
+
+function saveEpisode() {
+  const chapter = document.getElementById("f-chapter").value.trim();
+  const title = document.getElementById("f-title").value.trim();
+  if (!chapter && !title) return;
+
+  const ep = {
+    id: editingId || Date.now().toString(),
+    volume: formVolume,
+    chapter,
+    subchapter: document.getElementById("f-subchapter").value.trim(),
+    title,
+    status: formStatus,
+    progress: parseInt(document.getElementById("form-progress").value) || 0,
+    note: document.getElementById("f-note").value.trim(),
+  };
+
+  if (editingId) {
+    episodes = episodes.map(e => e.id === editingId ? ep : e);
+  } else {
+    episodes.push(ep);
+  }
+  save();
+  closeModal();
+  render();
+}
+
+function deleteEpisode() {
+  if (!editingId) return;
+  episodes = episodes.filter(e => e.id !== editingId);
+  save();
+  closeModal();
+  render();
+}
+
+function renderVolBtns() {
+  const c = document.getElementById("vol-btns");
+  c.innerHTML = VOLUMES.map(v => {
+    const active = formVolume === v;
+    const vc = VOL_COLORS[v];
+    return `<button class="vol-btn" onclick="setVolume(${v})" style="
+      background:${active ? vc.bg : "transparent"};
+      border:1px solid ${active ? vc.color : "#1e2530"};
+      color:${active ? vc.color : "#4a5568"};
+      padding:5px 13px; font-size:13px;
+    ">${v}</button>`;
+  }).join("");
+}
+
+function renderStatusBtns() {
+  const c = document.getElementById("status-btns");
+  c.innerHTML = STATUSES.map(s => {
+    const active = formStatus === s.id;
+    return `<button class="status-btn" onclick="setStatus('${s.id}')" style="
+      background:${active ? s.bg : "transparent"};
+      border:1px solid ${active ? s.color : "#1e2530"};
+      color:${active ? s.color : "#4a5568"};
+      padding:5px 12px; font-size:12px;
+    ">${s.label}</button>`;
+  }).join("");
+}
+
+function render() {
+  const q = document.getElementById("search-input").value.toLowerCase();
+  const sortBy = document.getElementById("sort-select").value;
+
+  // Update title
+  const avg = episodes.length > 0
+    ? Math.round(episodes.reduce((s,e) => s + (e.progress||0), 0) / episodes.length) : 0;
+  document.getElementById("title-line").textContent =
+    `Эпизоды · ${episodes.length} / ${avg}% готов.`;
+
+  // Status filters
+  const sfEl = document.getElementById("status-filters");
+  const statusCounts = STATUSES.map(s => ({ ...s, count: episodes.filter(e => e.status === s.id).length }));
+  sfEl.innerHTML = statusCounts.filter(s => s.count > 0).map(s => {
+    const active = filterStatus === s.id;
+    return `<button onclick="toggleStatusFilter('${s.id}')" style="
+      background:${active ? s.bg : "transparent"};
+      border:1px solid ${active ? s.color : "#1e2530"};
+      color:${active ? s.color : "#5A6878"};
+      padding:4px 12px; font-size:12px; letter-spacing:0.5px; transition:all 0.15s;
+    ">${s.label} ${s.count}</button>`;
+  }).join("") + (filterStatus !== "all" ? `<button onclick="toggleStatusFilter('all')" style="background:transparent;border:1px solid #1e2530;color:#5A6878;padding:4px 10px;font-size:11px;">✕ сброс</button>` : "");
+
+  // Volume filters
+  const vfEl = document.getElementById("volume-filters");
+  vfEl.innerHTML = `<span class="filter-label">Том</span>
+    <button onclick="toggleVolumeFilter('all')" style="
+      background:${filterVolume === 'all' ? '#1e2530' : 'transparent'};
+      border:1px solid ${filterVolume === 'all' ? '#5A6878' : '#1e2530'};
+      color:${filterVolume === 'all' ? '#d4cfc8' : '#3a4555'};
+      padding:3px 10px; font-size:12px;
+    ">Все</button>` +
+    VOLUMES.map(v => {
+      const cnt = episodes.filter(e => String(e.volume) === String(v)).length;
+      const active = String(filterVolume) === String(v);
+      const vc = VOL_COLORS[v];
+      return `<button onclick="toggleVolumeFilter(${v})" style="
+        background:${active ? vc.bg : 'transparent'};
+        border:1px solid ${active ? vc.color : cnt > 0 ? '#1e2530' : '#141820'};
+        color:${active ? vc.color : cnt > 0 ? '#5A6878' : '#252c38'};
+        padding:3px 10px; font-size:12px;
+      ">${v}${cnt > 0 ? ` <span style="font-size:10px;opacity:0.7">(${cnt})</span>` : ""}</button>`;
+    }).join("");
+
+  // Filter + sort episodes
+  let filtered = episodes
+    .filter(e => filterStatus === "all" || e.status === filterStatus)
+    .filter(e => filterVolume === "all" || String(e.volume) === String(filterVolume))
+    .filter(e => !q || (e.title||"").toLowerCase().includes(q) || (e.chapter||"").toLowerCase().includes(q) || (e.note||"").toLowerCase().includes(q))
+    .slice()
+    .sort((a, b) => {
+      if (sortBy === "progress") return (a.progress||0) - (b.progress||0);
+      if (sortBy === "status") return (a.status||"").localeCompare(b.status||"");
+      const ca = parseFloat(a.chapter)||0, cb = parseFloat(b.chapter)||0;
+      if (ca !== cb) return ca - cb;
+      return (parseFloat(a.subchapter)||0) - (parseFloat(b.subchapter)||0);
+    });
+
+  const listEl = document.getElementById("list");
+  if (filtered.length === 0) {
+    listEl.innerHTML = `<div id="empty-msg">${episodes.length === 0 ? "Добавь первый эпизод →" : "Ничего не найдено"}</div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(ep => {
+    const st = getStatus(ep.status);
+    const pColor = (ep.progress||0) >= 80 ? "#5AC47A" : (ep.progress||0) >= 40 ? "#C4A35A" : "#6B7A8D";
+    const pBarColor = (ep.progress||0) >= 80 ? "#5AC47A" : (ep.progress||0) >= 40 ? "#C4A35A" : "#4a5568";
+    const notePreview = ep.note ? (ep.note.length > 40 ? ep.note.slice(0,40)+"…" : ep.note) : "";
+    return `
+      <div class="episode-card" style="border-left-color:${VOL_COLORS[ep.volume]?.color||st.color}" onclick="openEdit('${ep.id}')">
+        <div class="ep-pakt">
+          <div class="ep-pakt-label">пакт</div>
+          <div class="ep-pakt-num">${ep.chapter||"—"}</div>
+          ${ep.volume ? `<div class="ep-pakt-vol" style="color:${VOL_COLORS[ep.volume]?.color||'#C4A35A'}">том ${ep.volume}</div>` : ""}
+        </div>
+        <div>
+          <div class="ep-title">${ep.title || '<span class="ep-no-title">без названия</span>'}</div>
+          ${ep.subchapter ? `<div style="font-size:12px;color:#5A6878;margin-bottom:3px;font-style:italic">${ep.subchapter}</div>` : ''}
+          <div class="ep-meta">
+            <span class="ep-status-badge" style="color:${st.color};background:${st.bg}">${st.label}</span>
+            ${notePreview ? `<span class="ep-note-preview">${notePreview}</span>` : ""}
+          </div>
+        </div>
+        <div class="ep-progress">
+          <div class="ep-progress-num" style="color:${pColor}">${ep.progress||0}%</div>
+          <div class="ep-progress-bar-bg">
+            <div class="ep-progress-bar" style="width:${ep.progress||0}%;background:${pBarColor}"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function toggleStatusFilter(id) {
+  filterStatus = (filterStatus === id) ? "all" : id;
+  render();
+}
+function toggleVolumeFilter(v) {
+  filterVolume = (String(filterVolume) === String(v)) ? "all" : v;
+  render();
+}
+
+function download(filename, content, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = filename;
+  a.click();
+}
+
+function exportJSON() {
+  download("tracker-backup.json", JSON.stringify(episodes, null, 2), "application/json");
+}
+
+function importJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (Array.isArray(data)) {
+        episodes = data;
+        save();
+        render();
+        alert("Импортировано: " + data.length + " эпизодов");
+      }
+    } catch { alert("Ошибка: файл повреждён или неверный формат"); }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+}
+
+function exportCSV() {
+  const header = "Том,Пакт,Манифест/Лирика,Название,Статус,Готовность%,Заметка";
+  const rows = episodes.map(e => [
+    e.volume||"", e.chapter||"", e.subchapter||"",
+    `"${(e.title||"").replace(/"/g,'""')}"`,
+    getStatus(e.status).label,
+    e.progress||0,
+    `"${(e.note||"").replace(/"/g,'""')}"`
+  ].join(","));
+  download("tracker.csv", "\uFEFF" + [header, ...rows].join("\n"), "text/csv");
+}
+
+function exportMD() {
+  const grouped = {};
+  episodes.forEach(e => {
+    const v = "Том " + (e.volume || "?");
+    if (!grouped[v]) grouped[v] = [];
+    grouped[v].push(e);
+  });
+  let md = "# Трекер проекта\n\n";
+  for (const [vol, eps] of Object.entries(grouped)) {
+    md += `## ${vol}\n\n`;
+    md += "| Пакт | Манифест/Лирика | Название | Статус | Готовность | Заметка |\n";
+    md += "|------|----------------|----------|--------|------------|---------|\n";
+    eps.forEach(e => {
+      md += `| ${e.chapter||""} | ${e.subchapter||""} | ${e.title||""} | ${getStatus(e.status).label} | ${e.progress||0}% | ${e.note||""} |\n`;
+    });
+    md += "\n";
+  }
+  download("tracker.md", md, "text/markdown");
+}
+
+// Init
+renderVolBtns();
+renderStatusBtns();
+render();
+</script>
+</body>
+</html>
