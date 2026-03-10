@@ -298,8 +298,15 @@
       <input id="f-chapter" class="text-input" placeholder="3" />
     </div>
     <div class="field-wrap">
-      <div class="field-label">Манифест / Лирика</div>
-      <input id="f-subchapter" class="text-input" placeholder="Манифест, Лирика, название..." />
+      <div class="field-label">Тип</div>
+      <select id="f-subchapter" class="text-input" style="background:#12151c;color:#d4cfc8">
+        <option value="">— не указан —</option>
+        <option value="Манифест">Манифест</option>
+        <option value="Лирика">Лирика</option>
+        <option value="Увертюра">Увертюра</option>
+        <option value="Интермеццо">Интермеццо</option>
+        <option value="Каприччио">Каприччио</option>
+      </select>
     </div>
     <div class="field-wrap">
       <div class="field-label">Название / описание</div>
@@ -377,7 +384,7 @@ function getStatus(id) {
 
 function openAdd() {
   editingId = null;
-  formVolume = 1;
+  formVolume = filterVolume !== "all" ? Number(filterVolume) : 1;
   formStatus = "idea";
   document.getElementById("modal-title").textContent = "Новый эпизод";
   document.getElementById("f-chapter").value = "";
@@ -389,6 +396,7 @@ function openAdd() {
   document.getElementById("btn-delete").style.display = "none";
   renderVolBtns();
   renderStatusBtns();
+  updateAccentColor();
   document.getElementById("modal-overlay").classList.add("active");
 }
 
@@ -561,21 +569,21 @@ function render() {
     const st = getStatus(ep.status);
     const pColor = (ep.progress||0) >= 80 ? "#5AC47A" : (ep.progress||0) >= 40 ? "#C4A35A" : "#6B7A8D";
     const pBarColor = (ep.progress||0) >= 80 ? "#5AC47A" : (ep.progress||0) >= 40 ? "#C4A35A" : "#4a5568";
-    const notePreview = ep.note ? (ep.note.length > 40 ? ep.note.slice(0,40)+"…" : ep.note) : "";
+    const notePreview = ep.note ? (ep.note.length > 80 ? ep.note.slice(0,80)+"…" : ep.note) : "";
     return `
       <div class="episode-card" style="border-left-color:${VOL_COLORS[ep.volume]?.color||st.color}" onclick="openEdit('${ep.id}')">
         <div class="ep-pakt">
           <div class="ep-pakt-label">пакт</div>
           <div class="ep-pakt-num">${ep.chapter||"—"}</div>
+          ${ep.subchapter ? `<div style="font-size:10px;color:#5A6878;letter-spacing:0.5px;margin-top:4px;line-height:1.3">${ep.subchapter}</div>` : ''}
           ${ep.volume ? `<div class="ep-pakt-vol" style="color:${VOL_COLORS[ep.volume]?.color||'#C4A35A'}">том ${ep.volume}</div>` : ""}
         </div>
         <div>
           <div class="ep-title">${ep.title || '<span class="ep-no-title">без названия</span>'}</div>
-          ${ep.subchapter ? `<div style="font-size:12px;color:#5A6878;margin-bottom:3px;font-style:italic">${ep.subchapter}</div>` : ''}
           <div class="ep-meta">
             <span class="ep-status-badge" style="color:${st.color};background:${st.bg}">${st.label}</span>
-            ${notePreview ? `<span class="ep-note-preview">${notePreview}</span>` : ""}
           </div>
+          ${notePreview ? `<div style="font-size:12px;color:#6B7A8D;margin-top:5px;line-height:1.5;font-style:italic">${notePreview}</div>` : ""}
         </div>
         <div class="ep-progress">
           <div class="ep-progress-num" style="color:${pColor}">${ep.progress||0}%</div>
@@ -593,7 +601,15 @@ function toggleStatusFilter(id) {
 }
 function toggleVolumeFilter(v) {
   filterVolume = (String(filterVolume) === String(v)) ? "all" : v;
+  updateAccentColor();
   render();
+}
+
+function updateAccentColor() {
+  const color = filterVolume === "all" ? "#C4A35A" : (VOL_COLORS[filterVolume]?.color || "#C4A35A");
+  document.getElementById("btn-add").style.background = color;
+  const saveBtn = document.getElementById("btn-save");
+  if (saveBtn) saveBtn.style.background = color;
 }
 
 function download(filename, content, type) {
