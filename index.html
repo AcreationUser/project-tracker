@@ -257,7 +257,7 @@
   <div id="header-top">
     <div>
       <div id="subtitle">Трекер проекта</div>
-      <div id="title-line">Эпизоды · 0 / 0% готов.</div>
+      <div id="title-line">Эпизоды · 0 / 0% готово</div>
     </div>
     <button id="btn-add" onclick="openAdd()">+ Добавить</button>
   </div>
@@ -495,11 +495,13 @@ function render() {
   const q = document.getElementById("search-input").value.toLowerCase();
   const sortBy = document.getElementById("sort-select").value;
 
-  // Update title
-  const avg = episodes.length > 0
-    ? Math.round(episodes.reduce((s,e) => s + (e.progress||0), 0) / episodes.length) : 0;
+  // Update title — count and avg based on current volume filter
+  const visibleEps = filterVolume === "all" ? episodes : episodes.filter(e => String(e.volume) === String(filterVolume));
+  const avg = visibleEps.length > 0
+    ? Math.round(visibleEps.reduce((s,e) => s + (e.progress||0), 0) / visibleEps.length) : 0;
+  const volLabel = filterVolume === "all" ? "" : ` · том ${filterVolume}`;
   document.getElementById("title-line").textContent =
-    `Эпизоды · ${episodes.length} / ${avg}% готов.`;
+    `Эпизоды${volLabel} · ${visibleEps.length} / ${avg}% готово`;
 
   // Status filters
   const sfEl = document.getElementById("status-filters");
