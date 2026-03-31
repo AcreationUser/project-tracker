@@ -42,15 +42,19 @@
     z-index: 10;
   }
   #header-collapsible {
-    overflow: hidden;
+    overflow: visible;
     max-height: 400px;
     transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 0.25s ease;
     opacity: 1;
   }
   #header-collapsible.collapsed {
+    overflow: hidden;
     max-height: 0;
     opacity: 0;
+  }
+  #header-collapsible.transitioning {
+    overflow: hidden;
   }
   #toggle-filters {
     background: transparent;
@@ -705,8 +709,10 @@ function exportMD() {
 function toggleFilters() {
   var panel = document.getElementById('header-collapsible');
   var btn = document.getElementById('toggle-filters');
+  panel.classList.add('transitioning');
   panel.classList.toggle('collapsed');
   btn.classList.toggle('collapsed');
+  setTimeout(function() { panel.classList.remove('transitioning'); }, 320);
 }
 
 // Init
