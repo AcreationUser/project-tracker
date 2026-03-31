@@ -41,6 +41,29 @@
     top: 0;
     z-index: 10;
   }
+  #header-collapsible {
+    overflow: hidden;
+    max-height: 400px;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.25s ease;
+    opacity: 1;
+  }
+  #header-collapsible.collapsed {
+    max-height: 0;
+    opacity: 0;
+  }
+  #toggle-filters {
+    background: transparent;
+    border: none;
+    color: #3a4555;
+    font-size: 16px;
+    padding: 0 0 0 8px;
+    line-height: 1;
+    transition: transform 0.25s ease, color 0.15s;
+    vertical-align: middle;
+  }
+  #toggle-filters:hover { color: #5A6878; }
+  #toggle-filters.collapsed { transform: rotate(180deg); }
   #header-top {
     display: flex;
     align-items: flex-end;
@@ -259,8 +282,12 @@
       <div id="subtitle">Трекер проекта</div>
       <div id="title-line">Эпизоды · 0 / 0% готово</div>
     </div>
-    <button id="btn-add" onclick="openAdd()">+ Добавить</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="btn-add" onclick="openAdd()">+ Добавить</button>
+      <button id="toggle-filters" onclick="toggleFilters()" title="Фильтры">▲</button>
+    </div>
   </div>
+  <div id="header-collapsible">
   <div id="header-btns">
     <button class="btn-export" onclick="exportJSON()">↓ JSON (резерв)</button>
     <button class="btn-export" onclick="exportCSV()">↓ CSV / Excel</button>
@@ -278,6 +305,7 @@
       <option value="progress">По готовности</option>
       <option value="status">По статусу</option>
     </select>
+  </div>
   </div>
 </div>
 
@@ -672,6 +700,13 @@ function exportMD() {
     md += "\n";
   }
   download("tracker.md", md, "text/markdown");
+}
+
+function toggleFilters() {
+  var panel = document.getElementById('header-collapsible');
+  var btn = document.getElementById('toggle-filters');
+  panel.classList.toggle('collapsed');
+  btn.classList.toggle('collapsed');
 }
 
 // Init
